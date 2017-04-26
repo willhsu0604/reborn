@@ -1,36 +1,31 @@
 package pe
 
+import comm.HttpRequestHelper
 import org.apache.commons.logging.LogFactory
+import pe.job.ProgramJob
+import pe.servlet.ProgramServlet
+import util.{RestNameUtils, SysEnv}
 
 object PeClient {
 
   val LOG = LogFactory.getLog(getClass)
 
-  def testHelloServletPost(): Unit = {
+  def addProgramJob(programJob: ProgramJob): String = {
+    val jobId = HttpRequestHelper.doPut[ProgramJob, String](SysEnv.PE_URL + "/" + RestNameUtils.value(classOf[ProgramServlet]),  programJob)
+    if(jobId.isDefined) {
+      jobId.get
+    } else {
+      throw new RuntimeException(s"Not jobId is returned")
+    }
+  }
 
-//    val pb = new ProgramBean("123", "456", true)
-//
-//    val url = "http://localhost:8080/hello"
-//    val httpClient = HttpClientBuilder.create().build()
-//    val request = new HttpPost(url)
-//    val entityStr = new StringEntity(JsonUtils.toJson(pb))
-//    request.setEntity(entityStr)
-//    request.setHeader("Content-type", "application/json")
-//    try {
-//      val response = httpClient.execute(request)
-//      if (response != null) {
-//        val in = response.getEntity().getContent()
-//        val str = convertStreamToString(in)
-//        LOG.info(str)
-//      }
-//    } catch {
-//      case e: HttpHostConnectException => {
-//        LOG.error(s"Failed to create connection to [${url}]")
-//        throw e
-//      }
-//    }
-
-
+  def getProgramJob(jobId: String, isCompleted: Boolean): ProgramJob = {
+    val pj = HttpRequestHelper.doGet[ProgramJob](SysEnv.PE_URL + "/" + RestNameUtils.value(classOf[ProgramServlet]) + "?jobId=" + jobId + "&isCompleted=" + isCompleted)
+    if(pj.isDefined) {
+      pj.get
+    } else {
+      throw new RuntimeException(s"Job with id [${jobId}] is not found")
+    }
   }
 
 }

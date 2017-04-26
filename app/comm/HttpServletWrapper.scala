@@ -8,51 +8,51 @@ import util.JsonUtils
 
 import scala.collection.mutable
 
-class HttpServletWrapper[IN: Manifest, OUT: Manifest] extends HttpServlet {
+trait HttpServletWrapper extends HttpServlet {
 
   val LOG = LogFactory.getLog(getClass)
 
-  def doGet(params: Option[Map[String, String]]): OUT = {
-    throw new UnsupportedOperationException("Method [doGet] must be override")
-  }
+//  def doGet[OUT: Manifest](params: Option[Map[String, String]]): OUT = {
+//    throw new UnsupportedOperationException("Method [doGet] must be override")
+//  }
+//
+//  def doPost[IN: Manifest, OUT: Manifest](in: Option[IN], params: Option[Map[String, String]]): OUT = {
+//    throw new UnsupportedOperationException("Method [doPost] must be override")
+//  }
+//
+//  def doPut[IN: Manifest, OUT: Manifest](in: Option[IN], params: Option[Map[String, String]]): OUT = {
+//    throw new UnsupportedOperationException("Method [doPut] must be override")
+//  }
+//
+//  def doDelete[OUT: Manifest](params: Option[Map[String, String]]): OUT = {
+//    throw new UnsupportedOperationException("Method [doDelete] must be override")
+//  }
 
-  def doPost(in: Option[IN], params: Option[Map[String, String]]): OUT = {
-    throw new UnsupportedOperationException("Method [doPost] must be override")
-  }
+//  override def doGet(req: HttpServletRequest, resp: HttpServletResponse): Unit = {
+//    val params = parseRequestParams(req)
+//    val outObj = doGet(params)
+//    returnResponseJson(resp, outObj)
+//  }
+//
+//  override def doPut(req: HttpServletRequest, resp: HttpServletResponse): Unit = {
+//    val params = parseRequestParams(req)
+//    val outObj = doPut(parseRequestBody(req), params)
+//    returnResponseJson(resp, outObj)
+//  }
+//
+//  override def doPost(req: HttpServletRequest, resp: HttpServletResponse): Unit = {
+//    val params = parseRequestParams(req)
+//    val outObj = doPost(parseRequestBody(req), params)
+//    returnResponseJson(resp, outObj)
+//  }
+//
+//  override def doDelete(req: HttpServletRequest, resp: HttpServletResponse): Unit = {
+//    val params = parseRequestParams(req)
+//    val outObj = doDelete(params)
+//    returnResponseJson(resp, outObj)
+//  }
 
-  def doPut(in: Option[IN], params: Option[Map[String, String]]): OUT = {
-    throw new UnsupportedOperationException("Method [doPut] must be override")
-  }
-
-  def doDelete(params: Option[Map[String, String]]): OUT = {
-    throw new UnsupportedOperationException("Method [doDelete] must be override")
-  }
-
-  override def doGet(req: HttpServletRequest, resp: HttpServletResponse): Unit = {
-    val params = parseRequestParams(req)
-    val outObj = doGet(params)
-    returnResponseJson(resp, outObj)
-  }
-
-  override def doPut(req: HttpServletRequest, resp: HttpServletResponse): Unit = {
-    val params = parseRequestParams(req)
-    val outObj = doPut(parseRequestBody(req), params)
-    returnResponseJson(resp, outObj)
-  }
-
-  override def doPost(req: HttpServletRequest, resp: HttpServletResponse): Unit = {
-    val params = parseRequestParams(req)
-    val outObj = doPost(parseRequestBody(req), params)
-    returnResponseJson(resp, outObj)
-  }
-
-  override def doDelete(req: HttpServletRequest, resp: HttpServletResponse): Unit = {
-    val params = parseRequestParams(req)
-    val outObj = doDelete(params)
-    returnResponseJson(resp, outObj)
-  }
-
-  private def parseRequestParams(req: HttpServletRequest): Option[Map[String, String]] = {
+  protected def parseRequestParams(req: HttpServletRequest): Option[Map[String, String]] = {
     val queryParameters = mutable.Map[String, String]()
     val queryString = req.getQueryString()
     if (queryString != null && queryString.trim.length > 0) {
@@ -68,7 +68,7 @@ class HttpServletWrapper[IN: Manifest, OUT: Manifest] extends HttpServlet {
     }
   }
 
-  private def parseRequestBody(req: HttpServletRequest): Option[IN] = {
+  protected def parseRequestBody[IN: Manifest](req: HttpServletRequest): Option[IN] = {
     val jb = new StringBuffer()
     var line: String = null
     try {
@@ -99,7 +99,7 @@ class HttpServletWrapper[IN: Manifest, OUT: Manifest] extends HttpServlet {
     }
   }
 
-  private def returnResponseJson(resp: HttpServletResponse, outObj: OUT): Unit = {
+  protected def returnResponseJson[OUT: Manifest](resp: HttpServletResponse, outObj: OUT): Unit = {
     resp.setContentType("application/json; charset=utf-8")
     resp.setStatus(HttpServletResponse.SC_OK)
     val out = resp.getWriter()

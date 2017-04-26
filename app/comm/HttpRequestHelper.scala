@@ -22,10 +22,18 @@ object HttpRequestHelper {
   val LOG = LogFactory.getLog(getClass)
 
   def doGet[OUT: Manifest](url: String): Option[OUT] = {
+    doGet[OUT](url, Map[String, String]())
+  }
+
+  def doGet[OUT: Manifest](url: String, params: Map[String, String]): Option[OUT] = {
     send[OUT](url, REQUEST_METHOD.GET)
   }
 
   def doDelete[OUT: Manifest](url: String): Option[OUT] = {
+    doDelete[OUT](url, Map[String, String]())
+  }
+
+  def doDelete[OUT: Manifest](url: String, params: Map[String, String]): Option[OUT] = {
     send[OUT](url, REQUEST_METHOD.DELETE)
   }
 

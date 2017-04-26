@@ -1,7 +1,9 @@
 package pe
 
 import java.io.{File, FileWriter, IOException}
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.Date
+import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
+import java.util.concurrent.atomic.AtomicBoolean
 
 import org.apache.commons.logging.LogFactory
 import pe.enumeration.JobStatus
@@ -10,32 +12,89 @@ import pe.model.ProgramStatusBean
 import util._
 
 
-object ProgramJobHandler {
+object ProgramJobConsumer {
 
   val LOG = LogFactory.getLog(getClass)
   val programJobQueue = new ConcurrentLinkedQueue[ProgramJob]()
+  val completedJobHistory = new ConcurrentHashMap[String, ProgramJob]()
 
-  def startJobConsumer(): Unit = {
-    LOG.info("Starting ProgramJob consumer")
-    new Thread(new Runnable{
+  var currentThread: Thread = null
+  var keepAlive = new AtomicBoolean(false)
+
+  def start(): Unit = {
+    LOG.info("Starting ProgramJobConsumer")
+    currentThread = new Thread(new Runnable{
       override def run(): Unit = {
-        while(true) {
-          val job = programJobQueue.peek()
-          if(job != null) {
-            LOG.info(s"Starting to execute job [${job.id}]")
-            execute(job)
-            LOG.info(s"Job [${job.id}] is completed, poll it from the queue, current queue size is ${programJobQueue.size()}")
-            programJobQueue.poll()
-          } else {
-            Thread.sleep(500)
+        while(true && keepAlive.get) {
+          GlobalSync.get(this.getClass.getName).synchronized {
+            val job = programJobQueue.peek()
+            if(job != null) {
+              LOG.info(s"Starting to execute job [${job.id}]")
+              job.startTime = Option(new Date().getTime())
+              execute(job)
+              LOG.info(s"Job [${job.id}] is completed, poll it from the queue, current queue size is ${programJobQueue.size()}")
+              completedJobHistory.put(job.id, job)
+              programJobQueue.poll()
+              job.endTime = Option(new Date().getTime())
+            } else {
+              Thread.sleep(500)
+            }
           }
         }
       }
-    }).start()
-    LOG.info("ProgramJob consumer started")
+    })
+    keepAlive.set(true)
+    currentThread.start()
+    LOG.info("ProgramJobConsumer started")
+  }
+
+  def isAlive(): Boolean = {
+    keepAlive.get()
+  }
+
+  def stop(): Unit = {
+    keepAlive.set(false)
+  }
+
+  def waitAndGet(jobId: String): ProgramJob = {
+    val it = programJobQueue.iterator()
+    while(it.hasNext) {
+      val programJob = it.next()
+      if(jobId.equals(programJob.id)) {
+        return programJob
+      }
+    }
+    throw new RuntimeException("Job with id [" + jobId + "] is not existed")
+  }
+
+  def getCompleted(jobId: String): Option[ProgramJob] = {
+    val completedJob = completedJobHistory.get(jobId)
+    if(completedJob != null) {
+      Option(completedJob)
+    } else {
+      None
+    }
+  }
+
+  def get(jobId: String): ProgramJob = {
+    val completed = getCompleted(jobId)
+    if(completed.isDefined) {
+      return completed.get
+    }
+    val it = programJobQueue.iterator()
+    while(it.hasNext) {
+      val programJob = it.next()
+      if(jobId.equals(programJob.id)) {
+        return programJob
+      }
+    }
+    throw new RuntimeException("Job with id [" + jobId + "] is not existed")
   }
 
   def add(programJob: ProgramJob): String = {
+    if(!this.isAlive()) {
+      this.start()
+    }
     programJobQueue.add(programJob)
     LOG.info(s"ProgramJob with id [${programJob.id}] is added, current queue size is ${programJobQueue.size()}")
     programJob.id

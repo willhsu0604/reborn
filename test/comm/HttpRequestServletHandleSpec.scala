@@ -1,4 +1,5 @@
-import comm.HttpRequestHelper
+package comm
+
 import comm.model.TestBean
 import org.junit.runner._
 import org.specs2.mutable._

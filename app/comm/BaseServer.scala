@@ -25,7 +25,7 @@ trait BaseServer {
     server.setHandler(handler)
     val basePackage = getClass.getName.substring(0, getClass.getName.lastIndexOf(".") + 1)
     val reflections = new Reflections(basePackage + PACKAGE_NAME)
-    val classes = reflections.getSubTypesOf(new HttpServletWrapper().getClass)
+    val classes = reflections.getSubTypesOf(classOf[HttpServletWrapper])
     classes.foreach(cls => {
       val restName = cls.getDeclaredAnnotation(classOf[RestName])
       handler.addServlet(cls, "/" + restName.value())

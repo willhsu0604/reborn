@@ -8,4 +8,9 @@ GET     /                           controllers.Application.index
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
 
+# PE
+POST    /program                    pe.PeService.addProgramJob
+GET     /program                    pe.PeService.getProgramJob(jobId:String, isCompleted:Boolean?=false)
+
+
     
